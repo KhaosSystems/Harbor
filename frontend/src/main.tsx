@@ -1,10 +1,20 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import type { CSSProperties, ReactNode } from 'react'
+import { Window } from '@wailsio/runtime'
 import App from './App'
 import './main.css'
 
+const dragRegionStyle = { '--wails-draggable': 'drag' } as CSSProperties
+const noDragStyle = { '--wails-draggable': 'no-drag' } as CSSProperties
+
+type MtProps = {
+    children: ReactNode
+    className?: string
+}
+
 /** TODO: Merge with Matter */
-function MtDropdown({ children, className }) {
+function MtDropdown({ children, className = '' }: MtProps) {
     return (
         <div className={`mt-surface-panel flex flex-row px-2 py-2 justify-center items-center rounded-md justify-start ${className}`}>
             {children}
@@ -12,7 +22,7 @@ function MtDropdown({ children, className }) {
     );
 }
 
-function MtButton({ children, className }) {
+function MtButton({ children, className = '' }: MtProps) {
     return (
         <div className={`mt-surface-panel aspect-square flex flex-row px-2 py-2 justify-items-center items-center rounded-md justify-start ${className}`}>
             {children}
@@ -41,20 +51,48 @@ function CommitToolbar() {
 }
 
 function App2() {
+    const handleWindowAction = (operation: () => Promise<void>) => {
+        operation().catch(() => undefined)
+    }
+
     return (
-        <div className="p-2 grid grid-cols-[300px_1fr] grid-rows-[auto_1fr] gap-2 h-screen">
+        <div className="h-screen bg-surface-base text-text-primary">
+            <div className="p-2 h-full grid grid-cols-[300px_1fr] grid-rows-[auto_1fr] gap-2 h-[calc(100vh-2.5rem)]">
             { /* Logo and Repo select */ }
             <div className="flex flex-row gap-2 items-center">
                 <img src="/harbor-logo.svg" className="ml-1.5 w-7 h-7"/>
-                <MtDropdown className="flex-1" variant="panel" size="large">Dropdown</MtDropdown>
+                <MtDropdown className="flex-1">Dropdown</MtDropdown>
             </div>
 
             { /* Branch Select, Actions and Window Controls */ }
-            <div className="flex flex-row gap-2">
-                <MtDropdown variant="panel" size="large">Branch</MtDropdown>
-                <MtButton variant="panel" size="large">0</MtButton>
-                <MtButton variant="panel" size="large">1</MtButton>
-                <MtButton variant="panel" size="large">2</MtButton>
+            <div className="flex flex-row gap-2 items-center" style={dragRegionStyle}>
+                <MtDropdown>Branch</MtDropdown>
+                <MtButton>0</MtButton>
+                <MtButton>1</MtButton>
+                <MtButton>2</MtButton>
+                <div className="ml-auto flex items-center gap-1" style={noDragStyle}>
+                    <button
+                        type="button"
+                        className="h-8 w-8 rounded text-xs hover:bg-input-base-background-hover"
+                        onClick={() => handleWindowAction(Window.Minimise)}
+                    >
+                        —
+                    </button>
+                    <button
+                        type="button"
+                        className="h-8 w-8 rounded text-xs hover:bg-input-base-background-hover"
+                        onClick={() => handleWindowAction(Window.ToggleMaximise)}
+                    >
+                        ▢
+                    </button>
+                    <button
+                        type="button"
+                        className="h-8 w-8 rounded text-xs hover:bg-status-danger/25"
+                        onClick={() => handleWindowAction(Window.Close)}
+                    >
+                        ✕
+                    </button>
+                </div>
             </div>
 
             { /* Explorer */ }
@@ -85,6 +123,7 @@ function App2() {
 
                 { /* Commit Toolbar */ }
                 <CommitToolbar />
+            </div>
             </div>
         </div>
     );
