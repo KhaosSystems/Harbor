@@ -207,8 +207,8 @@ function App() {
   })
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-3 px-4 py-4 text-sm">
-      <div className="flex flex-wrap gap-2 rounded-md border border-white/10 bg-[#161616] p-3">
+    <main className="mx-auto flex min-h-screen w-full flex-col gap-3 px-4 py-4 text-sm">
+      <div className="mt-surface-panel flex flex-wrap gap-2 border border-border-default p-3">
         <select className="h-9 min-w-[18rem] flex-1 rounded-md border border-white/15 bg-white/5 px-2" value={currentRepo} onChange={(event) => handleSelectRepo(event.target.value)}>
           <option value="">Select repository</option>
           {repositories.map((repo) => <option key={repo} value={repo}>{repo}</option>)}
@@ -219,19 +219,19 @@ function App() {
         </button>
       </div>
 
-      <div className="whitespace-pre-wrap rounded-md border border-white/10 bg-[#161616] px-3 py-2 text-xs text-gray-300">{statusText}</div>
+      <div className="mt-surface-panel whitespace-pre-wrap border border-border-default px-3 py-2 text-xs">{statusText}</div>
 
       <div className="grid gap-3 md:grid-cols-[1.3fr_1fr]">
-        <section className="rounded-md border border-white/10 bg-[#161616]">
-          <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+        <section className="mt-surface-panel border border-border-default">
+          <div className="flex items-center justify-between border-b border-border-default px-3 py-2">
             <h2>Changes</h2>
             <span>{selectedPaths.length} selected</span>
           </div>
           <div className="max-h-[62vh] overflow-auto">
             {folderChanges.length === 0 ? (
-              <p className="p-3 text-xs text-gray-400">No local changes</p>
+              <p className="p-3 text-xs">No local changes</p>
             ) : (
-              <ul className="divide-y divide-white/10">
+              <ul className="divide-y divide-border-default">
                 {folderChanges.map((folderChange) => (
                   <li key={folderChange.folder} className="flex items-center gap-2 px-3 py-2">
                     <input
@@ -239,7 +239,7 @@ function App() {
                       checked={!!selectedFolders[folderChange.folder]}
                       onChange={(event) => setSelectedFolders((previous) => ({ ...previous, [folderChange.folder]: event.target.checked }))}
                     />
-                    <span className="min-w-[54px] text-xs text-gray-400">{folderChange.files.length} file{folderChange.files.length === 1 ? '' : 's'}</span>
+                    <span className="min-w-[54px] text-xs">{folderChange.files.length} file{folderChange.files.length === 1 ? '' : 's'}</span>
                     <span className="truncate">{folderChange.folder}</span>
                   </li>
                 ))}
@@ -248,7 +248,7 @@ function App() {
           </div>
         </section>
 
-        <section className="flex flex-col gap-2 rounded-md border border-white/10 bg-[#161616] p-3">
+        <section className="mt-surface-panel flex flex-col gap-2 border border-border-default p-3">
           <h2>Commit</h2>
           <input className="h-9 rounded-md border border-white/15 bg-white/5 px-2" value={message} onChange={(event) => setMessage(event.target.value)} placeholder="feat: added a feature" />
           <textarea className="min-h-28 rounded-md border border-white/15 bg-white/5 px-2 py-2" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Description" />
