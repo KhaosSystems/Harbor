@@ -280,7 +280,7 @@ function App() {
 
       <div className="mt-surface-panel whitespace-pre-wrap border border-border-default px-3 py-2 text-xs">{statusText}</div>
 
-      <div className="flex-1 grid gap-3 md:grid-cols-[1.3fr_1fr]">
+      <div className="flex-1 grid gap-3 md:grid-cols-[300px_1fr]">
         <section className="mt-surface-panel border border-border-default">
           <div className="flex items-center justify-between border-b border-border-default px-3 py-2">
             <h2>Changes</h2>

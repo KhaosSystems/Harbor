@@ -82,7 +82,7 @@
   --color-surface-scrim: var(--color-missing);
 
   --color-border-default: #292929;
-  --color-border-subtle: var(--color-missing);
+  --color-border-subtle: #222222;
 
   --color-text-primary: #666666;
   --color-text-secondary: var(--color-missing);
