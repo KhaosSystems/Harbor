@@ -1,4 +1,4 @@
-module changeme
+module harbor
 
 go 1.25
 
