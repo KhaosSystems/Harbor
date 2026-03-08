@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Events } from '@wailsio/runtime'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
+import { Events, Window } from '@wailsio/runtime'
 import { GitService } from '../bindings/harbor'
 
 type GitChange = {
@@ -16,6 +17,8 @@ type FolderChange = {
 }
 
 const ROOT_FOLDER = '.'
+const dragRegionStyle = { '--wails-draggable': 'drag' } as CSSProperties
+const noDragStyle = { '--wails-draggable': 'no-drag' } as CSSProperties
 
 function getFolderFromPath(path: string): string {
   const normalized = path.replace(/\\/g, '/')
@@ -45,6 +48,8 @@ function App() {
   const [action, setAction] = useState<SyncAction>('fetch')
   const [statusText, setStatusText] = useState('No repository selected.')
   const [busy, setBusy] = useState(false)
+  const [filesMenuOpen, setFilesMenuOpen] = useState(false)
+  const filesMenuRef = useRef<HTMLDivElement | null>(null)
 
   const folderChanges = useMemo<FolderChange[]>(() => {
     const folders = new Map<string, GitChange[]>()
@@ -142,6 +147,21 @@ function App() {
     loadRepoState(currentRepo)
   }, [currentRepo])
 
+  useEffect(() => {
+    if (!filesMenuOpen) {
+      return
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!filesMenuRef.current?.contains(event.target as Node)) {
+        setFilesMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('mousedown', handlePointerDown)
+    return () => window.removeEventListener('mousedown', handlePointerDown)
+  }, [filesMenuOpen])
+
   const runBusy = (operation: () => Promise<void>) => {
     setBusy(true)
     operation().finally(() => setBusy(false))
@@ -206,14 +226,53 @@ function App() {
     })
   })
 
+  const handleWindowAction = (operation: () => Promise<void>) => {
+    operation().catch(() => undefined)
+  }
+
   return (
-    <main className="mx-auto flex min-h-screen w-full flex-col gap-3 px-4 py-4 text-sm">
+    <div className="min-h-screen bg-surface-base text-sm text-text-primary">
+      <header className="mt-surface-panel sticky top-0 z-20 flex items-center justify-between border-b border-border-default px-2" style={dragRegionStyle}>
+        <div className="flex items-center gap-1" style={noDragStyle}>
+          <span className="px-2 text-xs font-medium">Harbor</span>
+          <div className="relative" ref={filesMenuRef}>
+            <button
+              type="button"
+              className="rounded px-2 py-1 text-xs hover:bg-input-base-background-hover"
+              onClick={() => setFilesMenuOpen((open) => !open)}
+            >
+              Files
+            </button>
+            {filesMenuOpen ? (
+              <div className="mt-surface-panel absolute left-0 top-9 z-30 min-w-44 border border-border-default p-1 shadow">
+                <button
+                  type="button"
+                  className="w-full rounded p-2 py-1 text-left text-xs hover:bg-input-base-background-hover"
+                  onClick={() => {
+                    setFilesMenuOpen(false)
+                    handleAddRepo()
+                  }}
+                >
+                  Add Repository...
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1" style={noDragStyle}>
+          <button type="button" className="h-8 w-8 rounded text-xs hover:bg-input-base-background-hover" onClick={() => handleWindowAction(Window.Minimise)}>—</button>
+          <button type="button" className="h-8 w-8 rounded text-xs hover:bg-input-base-background-hover" onClick={() => handleWindowAction(Window.ToggleMaximise)}>▢</button>
+          <button type="button" className="h-8 w-8 rounded text-xs hover:bg-status-danger/25" onClick={() => handleWindowAction(Window.Close)}>✕</button>
+        </div>
+      </header>
+
+      <main className="mx-auto flex min-h-[calc(100vh-2.75rem)] w-full h-full flex-col gap-3 px-4 py-4">
       <div className="mt-surface-panel flex flex-wrap gap-2 border border-border-default p-3">
         <select className="h-9 min-w-[18rem] flex-1 rounded-md border border-white/15 bg-white/5 px-2" value={currentRepo} onChange={(event) => handleSelectRepo(event.target.value)}>
           <option value="">Select repository</option>
           {repositories.map((repo) => <option key={repo} value={repo}>{repo}</option>)}
         </select>
-        <button className="h-9 rounded-md border border-white/20 px-3" onClick={handleAddRepo} disabled={busy}>Add</button>
         <button className="h-9 rounded-md bg-blue-500 px-3 font-medium text-black disabled:opacity-60" onClick={handleSync} disabled={!currentRepo || busy}>
           {action === 'pull' ? 'Pull' : action === 'push' ? 'Push' : 'Fetch'}
         </button>
@@ -221,7 +280,7 @@ function App() {
 
       <div className="mt-surface-panel whitespace-pre-wrap border border-border-default px-3 py-2 text-xs">{statusText}</div>
 
-      <div className="grid gap-3 md:grid-cols-[1.3fr_1fr]">
+      <div className="flex-1 grid gap-3 md:grid-cols-[1.3fr_1fr]">
         <section className="mt-surface-panel border border-border-default">
           <div className="flex items-center justify-between border-b border-border-default px-3 py-2">
             <h2>Changes</h2>
@@ -257,7 +316,8 @@ function App() {
           </button>
         </section>
       </div>
-    </main>
+      </main>
+    </div>
   )
 }
 

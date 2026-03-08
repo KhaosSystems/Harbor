@@ -3,7 +3,6 @@ package main
 import (
 	"embed"
 	"log"
-	"runtime"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -32,31 +31,17 @@ func main() {
 		},
 	})
 
-	mainMenu := app.NewMenu()
-	if runtime.GOOS == "darwin" {
-		mainMenu.Append(application.NewMenuFromItems(application.NewAppMenu()))
-	}
-	fileMenu := mainMenu.AddSubmenu("File")
-	fileMenu.Add("Add Local Repository...").SetAccelerator("CmdOrCtrl+O").OnClick(func(_ *application.Context) {
-		result := gitService.SelectAndAddLocalRepository()
-		if !result.Success {
-			app.Logger.Error(result.Error)
-		}
-	})
-	fileMenu.AddSeparator()
-	fileMenu.Add("Quit").SetAccelerator("CmdOrCtrl+Q").OnClick(func(_ *application.Context) {
-		app.Quit()
-	})
-	app.Menu.SetApplicationMenu(mainMenu)
-
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title: "Harbor",
+		Title:     "Harbor",
+		MinWidth:  800,
+		MinHeight: 600,
+		Frameless: true,
 		Mac: application.MacWindow{
 			InvisibleTitleBarHeight: 50,
 			Backdrop:                application.MacBackdropTranslucent,
 			TitleBar:                application.MacTitleBarHiddenInset,
 		},
-		BackgroundColour: application.NewRGB(27, 38, 54),
+		BackgroundColour: application.NewRGB(11, 11, 11),
 		URL:              "/",
 	})
 
