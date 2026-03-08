@@ -2,64 +2,66 @@ package main
 
 import (
 	"embed"
+	"log"
 	"runtime"
 
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/menu"
-	"github.com/wailsapp/wails/v2/pkg/menu/keys"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 //go:embed all:frontend/dist
 var assets embed.FS
 
+func init() {
+	application.RegisterEvent[string]("harbor:repositories-updated")
+}
+
 func main() {
-	// Create an instance of the app structure
-	app := NewApp()
+	gitService := &GitService{}
 
-	appMenu := menu.NewMenu()
+	app := application.New(application.Options{
+		Name:        "harbor",
+		Description: "Harbor Git Client",
+		Services: []application.Service{
+			application.NewService(gitService),
+		},
+		Assets: application.AssetOptions{
+			Handler: application.AssetFileServerFS(assets),
+		},
+		Mac: application.MacOptions{
+			ApplicationShouldTerminateAfterLastWindowClosed: true,
+		},
+	})
+
+	mainMenu := app.NewMenu()
 	if runtime.GOOS == "darwin" {
-		appMenu.Append(menu.AppMenu())
+		mainMenu.Append(application.NewMenuFromItems(application.NewAppMenu()))
 	}
-
-	fileMenu := appMenu.AddSubmenu("File")
-	fileMenu.AddText("Add Local Repository...", keys.CmdOrCtrl("o"), func(_ *menu.CallbackData) {
-		result := app.SelectAndAddLocalRepository()
-		if result.Success && !result.Cancelled {
-			wailsruntime.EventsEmit(app.ctx, "harbor:repositories-updated")
-		}
+	fileMenu := mainMenu.AddSubmenu("File")
+	fileMenu.Add("Add Local Repository...").SetAccelerator("CmdOrCtrl+O").OnClick(func(_ *application.Context) {
+		result := gitService.SelectAndAddLocalRepository()
 		if !result.Success {
-			wailsruntime.LogErrorf(app.ctx, "failed adding local repository: %s", result.Error)
+			app.Logger.Error(result.Error)
 		}
 	})
 	fileMenu.AddSeparator()
-	fileMenu.AddText("Quit", keys.CmdOrCtrl("q"), func(_ *menu.CallbackData) {
-		wailsruntime.Quit(app.ctx)
+	fileMenu.Add("Quit").SetAccelerator("CmdOrCtrl+Q").OnClick(func(_ *application.Context) {
+		app.Quit()
+	})
+	app.Menu.SetApplicationMenu(mainMenu)
+
+	app.Window.NewWithOptions(application.WebviewWindowOptions{
+		Title: "Harbor",
+		Mac: application.MacWindow{
+			InvisibleTitleBarHeight: 50,
+			Backdrop:                application.MacBackdropTranslucent,
+			TitleBar:                application.MacTitleBarHiddenInset,
+		},
+		BackgroundColour: application.NewRGB(27, 38, 54),
+		URL:              "/",
 	})
 
-	if runtime.GOOS == "darwin" {
-		appMenu.Append(menu.EditMenu())
-	}
-
-	// Create application with options
-	err := wails.Run(&options.App{
-		Title:  "harbor",
-		Width:  1024,
-		Height: 768,
-		AssetServer: &assetserver.Options{
-			Assets: assets,
-		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.startup,
-		Menu:             appMenu,
-		Bind: []interface{}{
-			app,
-		},
-	})
-
+	err := app.Run()
 	if err != nil {
-		println("Error:", err.Error())
+		log.Fatal(err)
 	}
 }
